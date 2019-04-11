@@ -100,10 +100,19 @@ mod test {
         assert!(root.insert(1));
         assert!(root.insert(5));
         assert!(!root.insert(3));
+    }
+
+    #[test]
+    fn contains() {
+        let mut root = Tree::new(3);
+        assert!(root.insert(2));
+        assert!(root.insert(4));
+        assert!(root.insert(1));
+        assert!(root.insert(5));
+        assert!(!root.insert(3));
 
         assert!(root.contains(4));
         assert!(root.contains(5));
         assert!(!root.contains(6));
-        dbg!(root);
     }
 }
