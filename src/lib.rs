@@ -8,9 +8,9 @@ pub struct Tree<T: Ord + PartialEq> {
 }
 
 impl<T: Ord + PartialEq> Tree<T> {
-    fn new(val: T) -> Tree<T> {
+    fn new() -> Tree<T> {
         Tree {
-            root: Leaf::new(val),
+            root: None,
         }
     }
 
@@ -23,11 +23,19 @@ impl<T: Ord + PartialEq> Tree<T> {
         }
     }
 
-    fn contains(&mut self, val: T) -> bool {
-        if let Some(box node) = &mut self.root {
+    fn contains(&self, val: T) -> bool {
+        if let Some(box node) = &self.root {
             node.contains(val)
         } else {
             false
+        }
+    }
+
+    fn max_depth(&self) -> usize {
+        if let Some(box node) = &self.root {
+            node.max_depth()
+        } else {
+            0
         }
     }
 }
@@ -86,7 +94,41 @@ impl<T: Ord + PartialEq> Leaf<T> {
             _ => true,
         }
     }
+
+    pub fn max_depth(&self) -> usize {
+        macro_rules! dpth {
+            ($side:expr) => {
+                match &$side {
+                    Some(box side) => 1 + side.max_depth(),
+                    None => 1,
+                }
+            };
+        }
+
+        let left = dpth!(self.left);
+        let right = dpth!(self.right);
+        if left < right {
+            right
+        } else {
+            left
+        }
+    }
 }
+
+use std::iter::FromIterator;
+
+impl<T: Ord> FromIterator<T> for Tree<T> {
+    fn from_iter<I: IntoIterator<Item=T>>(iter: I) -> Self {
+        let mut c = Tree::new();
+        for i in iter {
+            c.insert(i);
+        }
+
+        c
+    }
+}
+
+
 
 #[cfg(test)]
 mod test {
@@ -94,7 +136,8 @@ mod test {
 
     #[test]
     fn insert() {
-        let mut root = Tree::new(3);
+        let mut root = Tree::new();
+        assert!(root.insert(3));
         assert!(root.insert(2));
         assert!(root.insert(4));
         assert!(root.insert(1));
@@ -104,7 +147,8 @@ mod test {
 
     #[test]
     fn contains() {
-        let mut root = Tree::new(3);
+        let mut root = Tree::new();
+        assert!(root.insert(3));
         assert!(root.insert(2));
         assert!(root.insert(4));
         assert!(root.insert(1));
@@ -114,5 +158,29 @@ mod test {
         assert!(root.contains(4));
         assert!(root.contains(5));
         assert!(!root.contains(6));
+    }
+
+    #[test]
+    fn large_tree() {
+        use rand::{self, thread_rng, seq::SliceRandom};
+        let mut rng = thread_rng();
+        let mut nums = (0..1_000_000).collect::<Vec<usize>>();
+        nums.shuffle(&mut rng);
+        let thing = nums.into_iter().collect::<Tree<usize>>();
+
+        for i in 0..1_000_000 {
+            assert!(thing.contains(i));
+        }
+    }
+
+    #[test]
+    fn depth() {
+        let mut tree = Tree::new();
+
+        tree.insert(1);
+        tree.insert(2);
+        tree.insert(3);
+        tree.insert(4);
+        assert_eq!(4, tree.max_depth());
     }
 }
